@@ -6,6 +6,7 @@ class SalesDataCreate(BaseModel):
     revenue: float
     ad_spend: float
     store_id: int
+    user_id: int
 
 class SalesDataOut(SalesDataCreate):
     id: int

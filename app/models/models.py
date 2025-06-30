@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from app.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -8,6 +10,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     stores = relationship("Store", back_populates="owner")
+    sales = relationship("SalesData", back_populates="user")
 
 
 class Store(Base):
@@ -27,3 +30,5 @@ class SalesData(Base):
     ad_spend = Column(Float)
     store_id = Column(Integer, ForeignKey("stores.id"))
     store = relationship("Store", back_populates="sales")
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", back_populates="sales")

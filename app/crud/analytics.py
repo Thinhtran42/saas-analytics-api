@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.models import SalesData
 from app.core.redis_client import r
+from app.models.models import User
 
 import json
 
@@ -35,3 +36,26 @@ def get_summary(db: Session):
     print("📦 Ghi Redis cache")
 
     return summary
+
+def get_top_users(db: Session, limit: int = 3):
+    result = (
+        db.query(
+            User.id.label('user_id'),
+            User.email,
+            func.sum(SalesData.revenue).label("total_revenue")
+        )
+        .join(SalesData, SalesData.user_id == User.id)
+        .group_by(User.id, User.email)
+        .order_by(func.sum(SalesData.revenue).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "user_id": row.user_id,
+            "email": row.email,
+            "total_revenue": round(row.total_revenue, 2)
+        }
+        for row in result
+    ]
