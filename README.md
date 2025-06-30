@@ -1,43 +1,23 @@
-# SaaS Analytics Dashboard API
-
-🚀 **API mô phỏng dịch vụ Cigro** - Thu thập và phân tích dữ liệu từ cửa hàng online
+# SaaS Analytics API (Phiên bản thực tế theo code)
 
 ## 🎯 Tính năng chính
 
-- **📊 Analytics Dashboard**: Tổng quan dữ liệu bán hàng real-time
-- **💰 KPI Tracking**: ROAS, tỉ lệ chuyển đổi, doanh thu theo platform
-- **🔄 Data Pipeline**: Đồng bộ dữ liệu từ nhiều nguồn (Shopee, Lazada, Facebook Ads)
-- **⚡ Redis Cache**: Cache kết quả analytics để tăng tốc độ
-- **📈 Real-time Metrics**: Metrics và alerts real-time
-- **🔍 Data Quality**: Báo cáo chất lượng dữ liệu
-- **🗄️ PostgreSQL**: Database mạnh mẽ cho production
+- Đăng ký, đăng nhập, xác thực người dùng (JWT)
+- Quản lý dữ liệu bán hàng (SalesData)
+- Tổng hợp doanh thu, chi tiêu quảng cáo, ROAS
+- Thống kê top user theo doanh thu
+- **Structured Logging** với request tracking
+- **Health Check & Monitoring** system metrics
+- **Redis Caching** với cache hit/miss logging
 
-## 🚀 Cách chạy nhanh
+## 🚀 Hướng dẫn chạy
 
-### Cách 1: Docker (Khuyến nghị)
-
-```bash
-# Chạy với Docker Compose
-docker-compose up --build -d
-
-# Hoặc sử dụng script
-chmod +x docker-start.sh
-./docker-start.sh
-```
-
-### Cách 2: Local Development
+### 1. Local Development
 
 ```bash
-# Di chuyển vào thư mục dự án
 cd saas-analytics-api
-
-# Kích hoạt virtual environment
 source venv/bin/activate
-
-# Cài đặt dependencies
 pip install -r requirements.txt
-
-# Chạy server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -45,136 +25,228 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
-- **Health Check**: http://localhost:8000/health
 
 ## 🔗 API Endpoints
 
-### Analytics
+### Auth
 
-- `GET /api/v1/analytics/data-sources` - Danh sách nguồn dữ liệu
-- `POST /api/v1/analytics/sync-data` - Đồng bộ dữ liệu
-- `GET /api/v1/analytics/real-time-metrics` - Metrics real-time
-- `GET /api/v1/analytics/data-quality` - Báo cáo chất lượng dữ liệu
+- `POST /register` - Đăng ký tài khoản
+- `POST /login` - Đăng nhập, trả về access token
+- `GET /me` - Lấy thông tin user hiện tại
 
 ### Sales
 
-- `GET /api/v1/sales/` - Danh sách đơn hàng
-- `POST /api/v1/sales/` - Tạo đơn hàng mới
-- `GET /api/v1/sales/summary` - Tổng quan bán hàng
-- `POST /api/v1/sales/generate-fake-data` - Tạo dữ liệu fake
+- `POST /sales-data/` - Tạo dữ liệu bán hàng mới (yêu cầu xác thực)
+- `GET /sales-data/` - Lấy danh sách dữ liệu bán hàng
+- `POST /sales-data/generate-fake` - Tạo dữ liệu fake để test (tham số: count)
 
-### KPI
+### Analytics
 
-- `GET /api/v1/kpi/roas` - Tính ROAS
-- `GET /api/v1/kpi/conversion-rate` - Tỉ lệ chuyển đổi
-- `GET /api/v1/kpi/revenue-summary` - Tổng quan doanh thu
-- `GET /api/v1/kpi/platform-performance` - Hiệu suất platform
-- `GET /api/v1/kpi/dashboard` - Dữ liệu dashboard
+- `GET /analytics/summary` - Tổng hợp doanh thu, chi tiêu, ROAS (yêu cầu xác thực)
+- `GET /analytics/top_users` - Top user theo doanh thu (yêu cầu xác thực)
 
-### Cache
+### Health Check & Monitoring
 
-- `GET /api/v1/cache/status` - Trạng thái cache
-- `DELETE /api/v1/cache/clear` - Xóa tất cả cache
-- `GET /api/v1/cache/keys` - Danh sách cache keys
+- `GET /health/` - Basic health check
+- `GET /health/detailed` - Detailed health check (DB + Redis)
+- `GET /health/metrics` - System metrics (CPU, Memory, Disk, Network)
+- `GET /health/redis-info` - Redis performance metrics
 
-## 🧪 Test API
+## 🗄️ Database Models
 
-1. **Tạo dữ liệu fake**:
+### User
 
-   ```bash
-   curl -X POST "http://localhost:8000/api/v1/sales/generate-fake-data"
-   ```
+- `id`: int, primary key
+- `email`: string, unique
+- `hashed_password`: string
 
-2. **Xem dashboard**:
+### Store
 
-   ```bash
-   curl "http://localhost:8000/api/v1/kpi/dashboard"
-   ```
-
-3. **Tính ROAS**:
-   ```bash
-   curl "http://localhost:8000/api/v1/kpi/roas?platform=shopee"
-   ```
-
-## 🛠️ Công nghệ sử dụng
-
-- **FastAPI** - Web framework
-- **PostgreSQL** - Database chính
-- **Redis** - Cache
-- **SQLAlchemy** - ORM
-- **Pydantic** - Data validation
-- **Uvicorn** - ASGI server
-
-## 📊 Database Schema
+- `id`: int, primary key
+- `name`: string
+- `owner_id`: int (liên kết User)
 
 ### SalesData
 
-- `id` - Primary key
-- `order_id` - ID đơn hàng (unique)
-- `customer_id` - ID khách hàng
-- `product_name` - Tên sản phẩm
-- `quantity` - Số lượng
-- `unit_price` - Đơn giá
-- `total_amount` - Tổng tiền
-- `platform` - Platform (shopee, lazada, tiktok)
-- `campaign_id` - ID chiến dịch quảng cáo
-- `ad_cost` - Chi phí quảng cáo
-- `created_at` - Thời gian tạo
-- `updated_at` - Thời gian cập nhật
+- `id`: int, primary key
+- `date`: date
+- `revenue`: float
+- `ad_spend`: float
+- `store_id`: int (liên kết Store)
+- `user_id`: int (liên kết User)
 
-### AdCampaign
+## 📦 Schema (Pydantic)
 
-- `id` - Primary key
-- `campaign_id` - ID chiến dịch (unique)
-- `campaign_name` - Tên chiến dịch
-- `platform` - Platform
-- `budget` - Ngân sách
-- `spent` - Đã chi
-- `impressions` - Lượt hiển thị
-- `clicks` - Lượt click
-- `conversions` - Lượt chuyển đổi
-- `start_date` - Ngày bắt đầu
-- `end_date` - Ngày kết thúc
-- `status` - Trạng thái
-- `created_at` - Thời gian tạo
+### UserCreate, UserLogin, UserOut
 
-## 🔧 Cấu hình
+- `email`: EmailStr
+- `password`: str (chỉ với UserCreate/UserLogin)
+- `id`: int (chỉ với UserOut)
 
-### Environment Variables
+### SalesDataCreate, SalesDataOut
+
+- `date`: date
+- `revenue`: float
+- `ad_spend`: float
+- `store_id`: int
+- `user_id`: int
+- `id`: int (chỉ với SalesDataOut)
+
+### SummaryResponse
+
+- `total_revenue`: float
+- `total_ad_spend`: float
+- `roas`: float
+
+### TopUserResponse
+
+- `user_id`: int
+- `email`: str
+- `total_revenue`: float
+
+## 🛠️ Công nghệ sử dụng
+
+### Backend & API
+
+- **FastAPI** - Modern Python web framework
+- **SQLAlchemy** - Database ORM với advanced indexing
+- **Pydantic** - Data validation
+- **Uvicorn** - ASGI server
+
+### Database & Caching
+
+- **PostgreSQL** - Primary database với performance optimization
+- **Redis** - Caching layer và session management
+
+### DevOps & Infrastructure
+
+- **Docker & Docker Compose** - Containerization
+- **GitHub Actions** - CI/CD pipeline
+- **Pytest** - Comprehensive testing framework
+
+### Data & Analytics
+
+- **Pandas & Numpy** - Data processing
+- **Faker** - Test data generation
+
+### Monitoring & Orchestration
+
+- **Structlog** - Structured logging system
+- **Psutil** - System metrics monitoring
+- **Prefect 2.0** - Modern workflow orchestration (Industry standard)
+- **ETL Pipelines** - Automated data processing workflows
+
+### Security & Auth
+
+- **JWT** - Token-based authentication
+- **Bcrypt** - Password hashing
+- **OAuth2** - Security scheme
+
+## 🧪 Test API
+
+### 1. Tạo dữ liệu fake để test
 
 ```bash
-# Database
-DATABASE_URL=postgresql://admin:admin123@postgres:5432/saas_analytics
+# Tạo 50 record fake (mặc định)
+curl -X POST "http://localhost:8000/sales-data/generate-fake"
 
-# Redis
-REDIS_URL=redis://redis:6379
+# Tạo 100 record fake
+curl -X POST "http://localhost:8000/sales-data/generate-fake?count=100"
 ```
 
-### Docker Services
+### 2. Xem tổng hợp analytics
 
-- **PostgreSQL**: Port 5432
-- **Redis**: Port 6379
-- **FastAPI**: Port 8000
+```bash
+# Cần đăng nhập trước để lấy token
+curl -X POST "http://localhost:8000/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=your_email@example.com&password=your_password"
 
-## 📈 KPI được tính toán
+# Sau đó dùng token để xem analytics
+curl -X GET "http://localhost:8000/analytics/summary" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
 
-- **ROAS** (Return on Ad Spend) = Doanh thu / Chi phí quảng cáo
-- **Tỉ lệ chuyển đổi** = Số đơn hàng / Số lượt click
-- **Doanh thu trung bình** = Tổng doanh thu / Số đơn hàng
-- **Hiệu suất platform** = Doanh thu theo từng platform
+### 3. Kiểm tra health check và monitoring
 
-## 🚨 Lưu ý
+```bash
+# Basic health check
+curl "http://localhost:8000/health/"
 
-- Sử dụng PostgreSQL cho production
-- Redis cần được cài đặt và chạy để cache hoạt động
-- Dữ liệu fake được tạo để test API
-- Các metrics real-time được giả lập
-- Database data được persist qua Docker volumes
+# Detailed health check (kiểm tra DB + Redis)
+curl "http://localhost:8000/health/detailed"
 
-## 🤝 Đóng góp
+# System metrics
+curl "http://localhost:8000/health/metrics"
 
-1. Fork dự án
-2. Tạo feature branch
-3. Commit changes
-4. Push to branch
-5. Tạo Pull Request
+# Redis performance
+curl "http://localhost:8000/health/redis-info"
+```
+
+## 📝 Logging Features
+
+- **Request/Response Logging**: Mỗi API call được log với request ID, response time
+- **Database Operation Logging**: Track CRUD operations với performance metrics
+- **Cache Logging**: Log cache hits/misses với query times
+- **Error Logging**: Structured error logs với stack traces
+- **System Monitoring**: CPU, memory, disk usage tracking
+
+## 🔄 Prefect Orchestration Features
+
+### **Tính năng chính của Prefect:**
+
+- ✅ **Modern Python-first design** - Không cần XML/YAML config
+- ✅ **Dynamic workflows** - Flow có thể thay đổi runtime
+- ✅ **Better observability** - Real-time monitoring và UI hiện đại
+- ✅ **Cloud-native** - Dễ deploy và scale trên cloud
+- ✅ **Enhanced error handling** - Automatic retry và recovery
+- ✅ **Faster development** - Nhanh hơn trong việc develop và test
+
+### **Workflows đã implement:**
+
+#### 1. **Daily Analytics ETL Pipeline**
+
+```
+Extract → Transform → Load → Report
+   ↓         ↓         ↓       ↓
+Database  Pandas   Redis   Insights
+```
+
+- **Extract**: Lấy dữ liệu từ PostgreSQL
+- **Transform**: Xử lý với Pandas (aggregations, metrics)
+- **Load**: Cache vào Redis với TTL
+- **Report**: Generate insights và recommendations
+
+#### 2. **Data Quality Check Flow**
+
+- Validate data consistency
+- Check data freshness (7 days)
+- Monitor record counts
+- Alert on quality issues
+
+### **Prefect API Endpoints:**
+
+- `GET /prefect/flows/status` - Thông tin workflows
+- `POST /prefect/flows/daily-etl/run` - Trigger ETL pipeline
+- `POST /prefect/flows/data-quality/run` - Run quality checks
+- `GET /prefect/analytics/cached` - Analytics từ Prefect ETL
+- `GET /prefect/monitoring/system` - Prefect system info
+
+### **Setup Prefect:**
+
+```bash
+# Chạy setup script
+python scripts/setup_prefect.py
+
+# Hoặc manual setup
+pip install prefect==2.14.0
+prefect server start --host 0.0.0.0
+prefect worker start --pool analytics-pool
+```
+
+### **Prefect UI Dashboard:**
+
+- 📊 **URL**: http://localhost:4200
+- 🔍 **Features**: Flow runs, task monitoring, logs, scheduling
+
+---

@@ -47,6 +47,33 @@ def read_sales(db: Session = Depends(get_db)):
     return crud.get_all_sales_data(db)
 
 
+@router.post("/sales-data/generate-fake")
+def generate_fake_sales(
+    count: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Tạo dữ liệu fake cho sales data"""
+    try:
+        created_sales = crud.generate_fake_sales_data(db, count)
+        return {
+            "message": f"✅ Đã tạo {len(created_sales)} dữ liệu fake thành công",
+            "count": len(created_sales),
+            "data": [
+                {
+                    "id": sales.id,
+                    "date": str(sales.date),
+                    "revenue": sales.revenue,
+                    "ad_spend": sales.ad_spend,
+                    "store_id": sales.store_id,
+                    "user_id": sales.user_id
+                }
+                for sales in created_sales[:5]  # Chỉ hiển thị 5 record đầu
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi tạo fake data: {str(e)}")
+
+
 @router.get("/analytics/summary", response_model=SummaryResponse)
 def analytics_summary(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
